@@ -1,0 +1,55 @@
+package com.example.rpsgame
+
+import android.os.Bundle
+import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import kotlin.random.Random
+
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // 綁定元件
+        val edName: EditText = findViewById(R.id.ed_name)
+        val tvText: TextView = findViewById(R.id.tv_text)
+        val radioGroup: RadioGroup = findViewById(R.id.radioGroup)
+        val btnStart: Button = findViewById(R.id.btn_start)
+
+        // 監聽按鈕事件
+        btnStart.setOnClickListener {
+            val name = edName.text.toString()
+            if (name.isEmpty()) {
+                tvText.text = "請先輸入姓名！"
+                return@setOnClickListener
+            }
+
+            // 取得玩家選擇
+            val playerChoice = when (radioGroup.checkedRadioButtonId) {
+                R.id.rbtn_scissor -> "剪刀"
+                R.id.rbtn_stone -> "石頭"
+                R.id.rbtn_paper -> "布"
+                else -> {
+                    tvText.text = "請選擇剪刀、石頭或布！"
+                    return@setOnClickListener
+                }
+            }
+
+            // 電腦隨機出拳
+            val computerChoice = listOf("剪刀", "石頭", "布").random()
+
+            // 判斷勝負
+            val result = when {
+                playerChoice == computerChoice -> "平手！"
+                (playerChoice == "剪刀" && computerChoice == "布") ||
+                (playerChoice == "石頭" && computerChoice == "剪刀") ||
+                (playerChoice == "布" && computerChoice == "石頭") -> "$name 勝利！"
+                else -> "電腦勝利！"
+            }
+
+            // 顯示結果
+            tvText.text = "玩家：$name\n你出的是：$playerChoice\n電腦出的是：$computerChoice\n結果：$result"
+        }
+    }
+}
