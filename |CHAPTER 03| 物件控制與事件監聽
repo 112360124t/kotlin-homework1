@@ -1,55 +1,85 @@
-package com.example.rpsgame
+package com.example.lab3
 
 import android.os.Bundle
 import android.widget.*
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import kotlin.random.Random
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        // 綁定元件
-        val edName: EditText = findViewById(R.id.ed_name)
-        val tvText: TextView = findViewById(R.id.tv_text)
-        val radioGroup: RadioGroup = findViewById(R.id.radioGroup)
-        val btnStart: Button = findViewById(R.id.btn_start)
+        // 改善: 用 applyWindowInsets() 處理全螢幕安全區域
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
 
-        // 監聽按鈕事件
-        btnStart.setOnClickListener {
-            val name = edName.text.toString()
-            if (name.isEmpty()) {
-                tvText.text = "請先輸入姓名！"
+        // 精簡 findViewById，多用 val 一行取完
+        val edName: EditText = findViewById(R.id.edName)
+        val tvText: TextView = findViewById(R.id.tvText)
+        val radioGroup: RadioGroup = findViewById(R.id.radioGroup)
+        val btnMora: Button = findViewById(R.id.btnMora)
+        val tvName: TextView = findViewById(R.id.tvName)
+        val tvWinner: TextView = findViewById(R.id.tvWinner)
+        val tvMyMora: TextView = findViewById(R.id.tvMyMora)
+        val tvTargetMora: TextView = findViewById(R.id.tvTargetMora)
+
+        // 改善: 使用 map + 常數定義讓程式更具語意與可維護性
+        val moraMap = mapOf(0 to "剪刀", 1 to "石頭", 2 to "布")
+
+        btnMora.setOnClickListener {
+            val playerName = edName.text.toString()
+
+            // 改善: 用 isBlank() 取代 isEmpty()，避免輸入空白時也通過
+            if (playerName.isBlank()) {
+                tvText.text = "請輸入玩家姓名"
                 return@setOnClickListener
             }
 
-            // 取得玩家選擇
-            val playerChoice = when (radioGroup.checkedRadioButtonId) {
-                R.id.rbtn_scissor -> "剪刀"
-                R.id.rbtn_stone -> "石頭"
-                R.id.rbtn_paper -> "布"
-                else -> {
-                    tvText.text = "請選擇剪刀、石頭或布！"
-                    return@setOnClickListener
-                }
+            // 改善: 可讀性更好的命名與隨機生成
+            val computerMove = (0..2).random()
+            val playerMove = when (radioGroup.checkedRadioButtonId) {
+                R.id.btnScissor -> 0
+                R.id.btnStone -> 1
+                R.id.btnPaper -> 2  // 建議 XML 裡命名為 btnPaper 更直觀
+                else -> -1
             }
 
-            // 電腦隨機出拳
-            val computerChoice = listOf("剪刀", "石頭", "布").random()
-
-            // 判斷勝負
-            val result = when {
-                playerChoice == computerChoice -> "平手！"
-                (playerChoice == "剪刀" && computerChoice == "布") ||
-                (playerChoice == "石頭" && computerChoice == "剪刀") ||
-                (playerChoice == "布" && computerChoice == "石頭") -> "$name 勝利！"
-                else -> "電腦勝利！"
+            if (playerMove == -1) {
+                tvText.text = "請選擇出拳！"
+                return@setOnClickListener
             }
 
-            // 顯示結果
-            tvText.text = "玩家：$name\n你出的是：$playerChoice\n電腦出的是：$computerChoice\n結果：$result"
+            // 顯示對戰資訊
+            tvName.text = "名字\n$playerName"
+            tvMyMora.text = "我方出拳\n${moraMap[playerMove]}"
+            tvTargetMora.text = "電腦出拳\n${moraMap[computerMove]}"
+
+            // 改善: 把勝負判斷提取成函式，可重用且更清楚
+            val result = getWinner(playerMove, computerMove, playerName)
+            tvWinner.text = "勝利者\n${result.first}"
+            tvText.text = result.second
+        }
+    }
+
+    /**
+     * 優化重點: 將勝負邏輯獨立成函式，讓主程式更乾淨、易測試。
+     */
+    private fun getWinner(player: Int, computer: Int, playerName: String): Pair<String, String> {
+        return when {
+            player == computer -> "平手" to "平局，請再試一次！"
+            (player == 0 && computer == 2) ||
+            (player == 1 && computer == 0) ||
+            (player == 2 && computer == 1) ->
+                playerName to "恭喜你獲勝了！！！"
+            else -> "電腦" to "可惜，電腦獲勝了！"
         }
     }
 }
